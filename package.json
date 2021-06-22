@@ -1,12 +1,20 @@
 {
   "name": "token-grabber-fun",
   "version": "1.0.0",
-  "description": "",
+  "description": "mess with skids using le token-grabber-fun script",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/darksunlight/token-grabber-fun.git"
+  },
   "keywords": [],
-  "author": "",
-  "type": "module"
+  "author": "darksunlight",
+  "license": "Unlicense",
+  "type": "module",
+  "dependencies": {
+    "node-fetch": "^2.6.1"
+  }
 }

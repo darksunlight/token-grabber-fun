@@ -37,6 +37,10 @@ function randomB64(len) {
     return b64;
 }
 
+function flakeToTime(snowflake) {
+    return new Date(snowflake / 2**22 + 1420070400000);
+}
+
 const CONST = {
     'EPOCH': 1420070400000,
     'TOKEN_GEN_EPOCH': 1293840000,
@@ -44,4 +48,4 @@ const CONST = {
     'MFA_REGEX': /mfa\.[\w-]{84}/,
 };
 
-export { getRandomInt, ntob, randomB64, CONST };
+export { flakeToTime, getRandomInt, ntob, randomB64, CONST };
