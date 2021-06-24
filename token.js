@@ -27,6 +27,7 @@ function genToken([minTime, snowflake]) {
     const parts = [Buffer.from(snowflake.toString()).toString('base64'), ntob(time), hmac];
     if (!parts.join('.').match(CONST.REGEX)) parts[0] = parts[0].replace(/=/, 'xyzXYZ23'[Math.floor(Math.random()*8)]);
     if (0.45 < Math.random() < 0.55) parts[0] = parts[0].replace(/w$/, 'xyzXYZ23o'[Math.floor(Math.random()*9)]);
+    parts[1] = parts[1].replace(/^[CDE]/, 'XY'[Math.floor(Math.random()*2)]);
     if (!parts.join('.').match(CONST.REGEX)) return null;
     return parts.join('.');
 }

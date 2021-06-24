@@ -15,6 +15,11 @@
   "license": "Unlicense",
   "type": "module",
   "dependencies": {
-    "node-fetch": "^2.6.1"
+    "discord.js": "^12.5.3",
+    "express": "^4.17.1",
+    "log4js": "^6.3.0",
+    "mustache": "^4.2.0",
+    "sequelize": "^6.6.2",
+    "sqlite3": "^5.0.2"
   }
 }
