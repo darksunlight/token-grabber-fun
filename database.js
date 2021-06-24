@@ -16,6 +16,7 @@ class Guild extends Model {}
 class Format extends Model {}
 class WebhookFormats extends Model {}
 class Statistics extends Model {}
+class AccessControl extends Model {}
 
 Sample.init({
     id: {
@@ -27,6 +28,9 @@ Sample.init({
 		type: DataTypes.STRING(64),
 		unique: true,
 	},
+    filename: {
+        type: DataTypes.TEXT,
+    },
 	description: {
         type: DataTypes.TEXT,
     },
@@ -181,6 +185,21 @@ Statistics.init({
     modelName: 'statistics',
 });
 
-const Models = { Channel, Format, Guild, Sample, Statistics, Webhook };
+AccessControl.init({
+    ip: {
+        type: DataTypes.STRING(45),
+        primaryKey: true,
+        unique: true,
+    },
+    level: {
+        type: DataTypes.INTEGER, // 0 - default / 1 - blacklisted / 2 - whitlisted / 3 - elevated
+        defaultValue: 0,
+    },
+}, {
+    sequelize,
+    modelName: 'accessControl',
+})
+
+const Models = { AccessControl, Channel, Format, Guild, Sample, Statistics, Webhook };
 
 export { sequelize, Models };
