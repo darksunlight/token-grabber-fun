@@ -198,7 +198,14 @@ AccessControl.init({
 }, {
     sequelize,
     modelName: 'accessControl',
-})
+});
+
+if(!(await Statistics.findOne({ where: { key: 'messages' } }))){
+    await Statistics.create({
+        key: 'messages',
+        value: 0,
+    });
+}
 
 const Models = { AccessControl, Channel, Format, Guild, Sample, Statistics, Webhook };
 

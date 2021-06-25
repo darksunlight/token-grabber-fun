@@ -5,6 +5,7 @@ import { sequelize as db, Models } from './database.js';
 
 const server = express();
 const version = '1';
+const statuses = ['Queued for analysis', 'Pending review', 'Analysed', 'Webhook(s) active', 'Rejected'];
 
 const ip = req => {
     return req.headers['cf-connecting-ip'] || req.socket.remoteAddress;
@@ -21,6 +22,8 @@ async function isElevated(req) {
     return false;
 }
 
+server.use(express.urlencoded({ extended: true }));
+
 server.get('/', (req, res) => {
     res.send(Mustache.render(fs.readFileSync('./templates/index.html', 'utf-8'), {
         version: version,
@@ -30,7 +33,10 @@ server.get('/', (req, res) => {
 
 server.get('/dashboard', async (req, res) => {
     const messages = await Models.Statistics.findOne({ where: { key: 'messages' } });
-    if (!messages) return res.send('please finish setting up MSHARP first');
+    if (!messages) {
+        res.status(500);
+        return res.send('something went wrong: database is not set up properly');
+    }
     const webhooks = (await Models.Webhook.findAndCountAll()).count;
     const channels = (await Models.Channel.findAndCountAll()).count;
     const guilds = (await Models.Guild.findAndCountAll()).count;
@@ -48,8 +54,55 @@ server.get('/dashboard', async (req, res) => {
 });
 
 server.get('/samples/add', async (req, res) => {
+    if (!(await isElevated(req))) {
+        res.status(403);
+        return res.send({ code: 403, desc: 'You are not authorised to view this page.'});
+    }
     res.send(Mustache.render(fs.readFileSync('./templates/add-sample.html', 'utf-8'), {
         version: version,
+        action: 'Add',
+        action_lc: 'add',
+        actionDesc: 'Use the following form to add a sample manually. Or alternatively, <a href="/samples/upload">upload a sample</a>.',
+        alertDisplay: 'none',
+        selectedDefault: 'selected ',
+    }));
+});
+
+server.post('/samples/add', async (req, res) => {
+    if (!(await isElevated(req))) {
+        res.status(403);
+        return res.send({ code: 403, desc: 'You are not authorised to view this page.'});
+    }
+    let id;
+    try {
+        const sample = await Models.Sample.create({
+            hash: req.body.hash,
+            filename: req.body.filename,
+            description: req.body.desc,
+            status: parseInt(req.body.status),
+        });
+        id = sample.get('id');
+    } catch (e) {
+        return res.send(Mustache.render(fs.readFileSync('./templates/add-sample.html', 'utf-8'), {
+            version: version,
+            action: 'Add',
+            action_lc: 'add',
+            actionDesc: 'Use the following form to add a sample manually. Or alternatively, <a href="/samples/upload">upload a sample</a>.',
+            alert: `\n                    Failed to add sample: ${e.name}\n                `,
+            alertClass: ' alert-danger',
+            alertDisplay: 'inherit',
+            selectedDefault: 'selected ',
+        }));
+    }
+    res.send(Mustache.render(fs.readFileSync('./templates/add-sample.html', 'utf-8'), {
+        version: version,
+        action: 'Add',
+        action_lc: 'add',
+        actionDesc: 'Use the following form to add a sample manually. Or alternatively, <a href="/samples/upload">upload a sample</a>.',
+        alert: `\n                    Sample added successfully. <a href="/samples/view/${id}">Click to view</a>\n                `,
+        alertClass: ' alert-success',
+        alertDisplay: 'inherit',
+        selectedDefault: 'selected ',
     }));
 });
 
@@ -59,6 +112,104 @@ server.get('/samples/view/:id', async (req, res) => {
         res.status(404);
         return res.send('No sample with the requested ID exists.');
     }
+    res.send(Mustache.render(fs.readFileSync('./templates/view-sample.html', 'utf-8'), {
+        version: version,
+        id: req.params.id,
+        filename: sample.get('filename'),
+        hash: sample.get('hash'),
+        desc: sample.get('description'),
+        status: statuses[sample.get('status')],
+    }));
+});
+
+server.get('/samples/delete/:id', async (req, res) => {
+    if (!(await isElevated(req))) {
+        res.status(403);
+        return res.send('You are not authorised to view this page.');
+    }
+    const sample = await Models.Sample.findOne({ where: { id: req.params.id } });
+    if (!sample) {
+        res.status(404);
+        return res.send('No sample with the requested ID exists.');
+    }
+    res.send(Mustache.render(fs.readFileSync('./templates/delete-sample.html', 'utf-8'), {
+        version: version,
+        id: req.params.id,
+    }));
+});
+
+server.get('/samples/edit/:id', async (req, res) => {
+    if (!(await isElevated(req))) {
+        res.status(403);
+        return res.send('You are not authorised to view this page.');
+    }
+    const sample = await Models.Sample.findOne({ where: { id: req.params.id } });
+    if (!sample) {
+        res.status(404);
+        return res.send('No sample with the requested ID exists.');
+    }
+    const eview = {
+        version: version,
+        id: ` ${req.params.id}`,
+        action: 'Edit',
+        action_lc: `edit/${req.params.id}`,
+        actionDesc: `return to <a href="/samples/view/${req.params.id}">view</a>`,
+        alertDisplay: 'none',
+        desc: sample.get('description'),
+        filename: sample.get('filename'),
+        hash: ` disabled value="${sample.get('hash')}"`,
+    };
+    eview[`selected${sample.get('status')}`] = `selected `;
+    res.send(Mustache.render(fs.readFileSync('./templates/add-sample.html', 'utf-8'), eview));
+});
+
+server.post('/samples/edit/:id', async (req, res) => {
+    if (!(await isElevated(req))) {
+        res.status(403);
+        return res.send('You are not authorised to view this page.');
+    }
+    const sample = await Models.Sample.findOne({ where: { id: req.params.id } });
+    if (!sample) {
+        res.status(404);
+        return res.send('No sample with the requested ID exists.');
+    }
+    try {
+        const sample = await Models.Sample.update({
+            filename: req.body.filename,
+            description: req.body.desc,
+            status: parseInt(req.body.status),
+        }, { where: { id: req.params.id } });
+    } catch (e) {
+        const eview = {
+            version: version,
+            id: ` ${req.params.id}`,
+            action: 'Edit',
+            action_lc: `edit/${req.params.id}`,
+            actionDesc: `return to <a href="/samples/view/${req.params.id}">view</a>`,
+            alert: `\n                    Failed to edit sample: ${e.name}\n                `,
+            alertClass: ' alert-danger',
+            alertDisplay: 'inherit',
+            desc: sample.get('description'),
+            filename: sample.get('filename'),
+            hash: ` disabled value="${sample.get('hash')}"`,
+        };
+        return res.send(Mustache.render(fs.readFileSync('./templates/add-sample.html', 'utf-8'), eview));
+    }
+    const eview = {
+        version: version,
+        id: ` ${req.params.id}`,
+        action: 'Edit',
+        action_lc: `edit/${req.params.id}`,
+        actionDesc: `return to <a href="/samples/view/${req.params.id}">view</a>`,
+        alert: `\n                    Sample edited successfully. <a href="/samples/view/${req.params.id}">Click to view</a>\n                `,
+        alertClass: ' alert-success',
+        alertDisplay: 'inherit',
+        desc: req.body.desc,
+        filename: req.body.filename,
+        hash: ` disabled value="${sample.get('hash')}"`,
+    };
+    eview[`selected${req.body.status}`] = `selected `;
+    res.send(Mustache.render(fs.readFileSync('./templates/add-sample.html', 'utf-8'), eview));
 });
 
 server.get('/api/internal', async (req, res) => {
@@ -86,23 +237,6 @@ server.get('/api/internal/elevate-ip/:ip', async (req, res) => {
         }, { where: { ip: req.params.ip } });
     }
     res.send(`successfully elevated ${req.params.ip}`);
-});
-
-server.get('/setup', async (req, res) => {
-    if (!(await isElevated(req))) {
-        res.status(403);
-        return res.send('You are not authorised to view this page.');
-    }
-    const messages = await Models.Statistics.findOne({ where: { key: 'messages' } });
-    if (!!messages) {
-        res.status(410);
-        return res.send('410 Gone');
-    }
-    await Models.Statistics.create({
-        key: 'messages',
-        value: 0,
-    });
-    res.send('h');
 });
 
 server.get('/ip', (req, res) => {
