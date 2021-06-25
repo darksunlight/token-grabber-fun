@@ -138,6 +138,19 @@ server.get('/samples/delete/:id', async (req, res) => {
     }));
 });
 
+server.post('/samples/delete/:id', async (req, res) => {
+    if (!(await isElevated(req))) {
+        res.status(403);
+        return res.send('You are not authorised to view this page.');
+    }
+    const sampleRows = await Models.Sample.destroy({ where: { id: req.params.id } });;
+    if (!sampleRows) {
+        res.status(404);
+        return res.send('No sample with the requested ID exists.');
+    }
+    res.send(`Sample with ID ${req.params.id} has been deleted successfully.`);
+});
+
 server.get('/samples/edit/:id', async (req, res) => {
     if (!(await isElevated(req))) {
         res.status(403);
@@ -210,6 +223,18 @@ server.post('/samples/edit/:id', async (req, res) => {
     };
     eview[`selected${req.body.status}`] = `selected `;
     res.send(Mustache.render(fs.readFileSync('./templates/add-sample.html', 'utf-8'), eview));
+});
+
+server.get('/samples/list', async (req, res) => {
+    if (!(await isElevated(req))) {
+        res.status(403);
+        return res.send('You are not authorised to view this page.');
+    }
+    const sampleList = await Models.Sample.findAll({ attributes: ['id', 'description', 'status'] });
+    res.send(Mustache.render(fs.readFileSync('./templates/list-samples.html', 'utf-8'), {
+        version: version,
+        samples: sampleList.map(sample => {return { id: sample.id, description: sample.description.substring(0, 15), status: statuses[sample.status] }}),
+    }));
 });
 
 server.get('/api/internal', async (req, res) => {
