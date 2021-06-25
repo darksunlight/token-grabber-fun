@@ -8,6 +8,14 @@
     </head>
     <body>
         <div class="col-xl-8 mx-auto p-3 py-md-5">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="/samples/list">Samples</a></li>
+                    <li class="breadcrumb-item"><a href="/samples/view/{{id}}">Sample {{id}}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Delete Sample {{id}}</li>
+                </ol>
+            </nav>
             <main>
                 <h1>Delete Sample {{id}}</h1>
                 <form method="POST" action="/samples/delete/{{id}}">

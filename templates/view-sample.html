@@ -8,13 +8,23 @@
     </head>
     <body>
         <div class="col-xl-8 mx-auto p-3 py-md-5">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="/samples/list">Samples</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Sample {{id}}</li>
+                </ol>
+            </nav>
             <main>
-                <h1>View Sample {{id}}</h1>
-                <p><a href="/samples/edit/{{id}}">edit</a>&nbsp;<a href="/samples/delete/{{id}}">delete</a></p>
+                <h1>View Sample {{id}}</h1>{{&elevatedContent}}
                 <form>
                     <div class="mb-3">
-                        <label for="filename" class="form-label">Filename(s)</label>
-                        <textarea class="form-control" id="filename" name="filename" rows="3" readonly>{{filename}}</textarea>
+                        <label for="filename">Filename(s)</label>
+                        <ul id="filename">
+                            {{#filenames}}
+                            <li>{{filename}}</li>
+                            {{/filenames}}
+                        </ul>
                     </div>
                     <div class="mb-3">
                         <label for="hash" class="form-label">SHA-256 Hash</label>

@@ -192,7 +192,7 @@ AccessControl.init({
         unique: true,
     },
     level: {
-        type: DataTypes.INTEGER, // 0 - default / 1 - blacklisted / 2 - whitlisted / 3 - elevated
+        type: DataTypes.INTEGER, // 0 - default / 1 - blacklisted / 2 - whitelisted / 3 - elevated
         defaultValue: 0,
     },
 }, {

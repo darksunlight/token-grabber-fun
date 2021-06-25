@@ -1,6 +1,6 @@
-import { genMFAToken, genSnowflake, genToken } from './token.js';
+// import { genMFAToken, genSnowflake, genToken } from './token.js';
 import { start as startServer } from './server.js';
-import { sequelize, Models } from './database.js';
+import { Models } from './database.js';
 
 /* let count = 0;
 while (count < 10) {

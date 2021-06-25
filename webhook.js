@@ -48,3 +48,5 @@ function sendFormatted(webhook, apps, tokens, ping) {
     }
 
 }
+
+export { send };
