@@ -8,8 +8,15 @@
     </head>
     <body>
         <div class="col-xl-8 mx-auto p-3 py-md-5">
-            <main>
-                <div class="alert{{alertClass}}" role="alert" style="display: {{alertDisplay}};">{{&alert}}</div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="/internal">Internal</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Change IP Access Level</li>
+                </ol>
+            </nav>
+            <main>{{#alert}}
+                <div class="alert alert-{{alertClass}}" role="alert">{{&alert}}</div>{{/alert}}
                 <h1>Change IP Access Level</h1>
                 <p>Use the following form to change the access level for IP <b>{{ip}}</b>.</p>
                 <form method="POST" action="/internal/ac/change">

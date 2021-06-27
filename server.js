@@ -36,6 +36,10 @@ const checkBlacklistedIp = async (req, res, next) => {
     next();
 };
 
+const http403 = async res => {
+    return res.status(403).send(Mustache.render(fs.readFileSync('./templates/403.html', 'utf-8'), { version: version }));
+};
+
 server.use(checkBlacklistedIp);
 server.use(express.urlencoded({ extended: true }));
 
@@ -47,6 +51,7 @@ server.get('/', (req, res) => {
 });
 
 server.get('/dashboard', async (req, res) => {
+    const elevated = await isElevated(req);
     const messages = await Models.Statistics.findByPk('messages');
     if (!messages) {
         res.status(500);
@@ -64,29 +69,27 @@ server.get('/dashboard', async (req, res) => {
             channel: channels,
             guild: guilds,
             samples: samples,
-        }
+        },
+        elevatedContent: elevated ? '\n                <p><a href="/internal">Internal</a></p>\n' : null,
     }));
 });
 
 server.get('/samples/add', async (req, res) => {
     if (!(await isElevated(req))) {
-        res.status(403);
-        return res.send('You are not authorised to view this page.');
+        return http403(res);
     }
     res.send(Mustache.render(fs.readFileSync('./templates/add-sample.html', 'utf-8'), {
         version: version,
         action: 'Add',
         action_lc: 'add',
         actionDesc: 'Use the following form to add a sample manually. Or alternatively, <a href="/samples/upload">upload a sample</a>.',
-        alertDisplay: 'none',
         selectedDefault: 'selected ',
     }));
 });
 
 server.post('/samples/add', async (req, res) => {
     if (!(await isElevated(req))) {
-        res.status(403);
-        return res.send('You are not authorised to view this page.');
+        return http403(res);
     }
     let id;
     try {
@@ -104,8 +107,7 @@ server.post('/samples/add', async (req, res) => {
             action_lc: 'add',
             actionDesc: 'Use the following form to add a sample manually. Or alternatively, <a href="/samples/upload">upload a sample</a>.',
             alert: `\n                    Failed to add sample: ${e.name}\n                `,
-            alertClass: ' alert-danger',
-            alertDisplay: 'inherit',
+            alertClass: 'danger',
             selectedDefault: 'selected ',
         }));
     }
@@ -115,8 +117,17 @@ server.post('/samples/add', async (req, res) => {
         action_lc: 'add',
         actionDesc: 'Use the following form to add a sample manually. Or alternatively, <a href="/samples/upload">upload a sample</a>.',
         alert: `\n                    Sample added successfully. <a href="/samples/view/${id}">Click to view</a>\n                `,
-        alertClass: ' alert-success',
-        alertDisplay: 'inherit',
+        alertClass: 'success',
+        selectedDefault: 'selected ',
+    }));
+});
+
+server.get('/samples/upload', async (req, res) => {
+    if (!(await isElevated(req))) {
+        return http403(res);
+    }
+    res.send(Mustache.render(fs.readFileSync('./templates/upload-sample.html', 'utf-8'), {
+        version: 1,
         selectedDefault: 'selected ',
     }));
 });
@@ -141,8 +152,7 @@ server.get('/samples/view/:id', async (req, res) => {
 
 server.get('/samples/delete/:id', async (req, res) => {
     if (!(await isElevated(req))) {
-        res.status(403);
-        return res.send('You are not authorised to view this page.');
+        return http403(res);
     }
     const sample = await Models.Sample.findByPk(req.params.id);
     if (!sample) {
@@ -157,8 +167,7 @@ server.get('/samples/delete/:id', async (req, res) => {
 
 server.post('/samples/delete/:id', async (req, res) => {
     if (!(await isElevated(req))) {
-        res.status(403);
-        return res.send('You are not authorised to view this page.');
+        return http403(res);
     }
     const sampleRows = await Models.Sample.destroy({ where: { id: req.params.id } });;
     if (!sampleRows) {
@@ -170,8 +179,7 @@ server.post('/samples/delete/:id', async (req, res) => {
 
 server.get('/samples/edit/:id', async (req, res) => {
     if (!(await isElevated(req))) {
-        res.status(403);
-        return res.send('You are not authorised to view this page.');
+        return http403(res);
     }
     const sample = await Models.Sample.findByPk(req.params.id);
     if (!sample) {
@@ -184,7 +192,6 @@ server.get('/samples/edit/:id', async (req, res) => {
         action: 'Edit',
         action_lc: `edit/${req.params.id}`,
         actionDesc: `Use the following form to edit the sample with ID <b>${req.params.id}</b>.`,
-        alertDisplay: 'none',
         desc: sample.get('description'),
         filename: sample.get('filename'),
         hash: ` disabled value="${sample.get('hash')}"`,
@@ -196,8 +203,7 @@ server.get('/samples/edit/:id', async (req, res) => {
 
 server.post('/samples/edit/:id', async (req, res) => {
     if (!(await isElevated(req))) {
-        res.status(403);
-        return res.send('You are not authorised to view this page.');
+        return http403(res);
     }
     const sample = await Models.Sample.findByPk(req.params.id);
     if (!sample) {
@@ -218,8 +224,7 @@ server.post('/samples/edit/:id', async (req, res) => {
             action_lc: `edit/${req.params.id}`,
             actionDesc: `return to <a href="/samples/view/${req.params.id}">view</a>`,
             alert: `\n                    Failed to edit sample: ${e.name}\n                `,
-            alertClass: ' alert-danger',
-            alertDisplay: 'inherit',
+            alertClass: 'danger',
             desc: sample.get('description'),
             filename: sample.get('filename'),
             hash: ` disabled value="${sample.get('hash')}"`,
@@ -233,8 +238,7 @@ server.post('/samples/edit/:id', async (req, res) => {
         action_lc: `edit/${req.params.id}`,
         actionDesc: `Use the following form to edit the sample with ID <b>${req.params.id}</b>.`,
         alert: `\n                    Sample edited successfully. <a href="/samples/view/${req.params.id}">Click to view</a>\n                `,
-        alertClass: ' alert-success',
-        alertDisplay: 'inherit',
+        alertClass: 'success',
         desc: req.body.desc,
         filename: req.body.filename,
         hash: ` disabled value="${sample.get('hash')}"`,
@@ -258,8 +262,7 @@ server.get('/samples/list', async (req, res) => {
 });
 
 server.get('/webhooks/list', async (req, res) => {
-    res.status(403);
-    res.send('You are not authorised to view this page.');
+    return http403(res);
 });
 
 server.get('/api/internal', async (req, res) => {
@@ -289,10 +292,18 @@ server.get('/api/internal/elevate-ip/:ip', async (req, res) => {
     res.send(`successfully elevated ${req.params.ip}`);
 });
 
+server.get('/internal', async (req, res) => {
+    if (!(await isElevated(req))) {
+        return http403(res);
+    }
+    res.send(Mustache.render(fs.readFileSync('./templates/internal.html', 'utf-8'), {
+        version: version,
+    }));
+});
+
 server.get('/internal/ac/list', async (req, res) => {
     if (!(await isElevated(req))) {
-        res.status(403);
-        return res.send('You are not authorised to view this page.');
+        return http403(res);
     }
     const ipList = await Models.AccessControl.findAll({ attributes: ['ip', 'level'] });
     res.send(Mustache.render(fs.readFileSync('./templates/internal-ac-list-ip.html', 'utf-8'), {
@@ -303,8 +314,7 @@ server.get('/internal/ac/list', async (req, res) => {
 
 server.get('/internal/ac/list/:level', async (req, res) => {
     if (!(await isElevated(req))) {
-        res.status(403);
-        return res.send('You are not authorised to view this page.');
+        return http403(res);
     }
     const ipList = await Models.AccessControl.findAll({ attributes: ['ip'], where: { level: req.params.level } });
     res.send(Mustache.render(fs.readFileSync('./templates/internal-ac-list-ip-w-level.html', 'utf-8'), {
@@ -316,8 +326,7 @@ server.get('/internal/ac/list/:level', async (req, res) => {
 
 server.get('/internal/ac/change/:ip', async (req, res) => {
     if (!(await isElevated(req))) {
-        res.status(403);
-        return res.send('You are not authorised to view this page.');
+        return http403(res);
     }
     const ip = await Models.AccessControl.findByPk(req.params.ip);
     const view = {
@@ -329,21 +338,15 @@ server.get('/internal/ac/change/:ip', async (req, res) => {
     }
     const alertSelfIP = {
         alert: `\n                    <b>Warning:</b> you are changing access level for your own IP address.\n                `,
-        alertClass: ' alert-warning',
-        alertDisplay: 'inherit',
-    };
-    const noAlert = {
-        alertDisplay: 'none',
+        alertClass: 'warning',
     };
     if (getIp(req) === req.params.ip) Object.assign(view, alertSelfIP);
-    else Object.assign(view, noAlert);
     res.send(Mustache.render(fs.readFileSync('./templates/internal-ac-change.html', 'utf-8'), view));
 });
 
 server.post('/internal/ac/change', async (req, res) => {
     if (!(await isElevated(req))) {
-        res.status(403);
-        return res.send('You are not authorised to view this page.');
+        return http403(res);
     }
     const ip = await Models.AccessControl.findByPk(req.body.ip);
     if (!ip) {
