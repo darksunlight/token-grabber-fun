@@ -88,12 +88,12 @@ server.get('/samples/add', async (req, res) => {
     if (!(await isElevated(req))) {
         return http403(res);
     }
-    res.send(renderTemplate('add-sample'), {
+    res.send(renderTemplate('add-sample', {
         action: 'Add',
         action_lc: 'add',
         actionDesc: 'Use the following form to add a sample manually. Or alternatively, <a href="/samples/upload">upload a sample</a>.',
         selectedDefault: 'selected ',
-    });
+    }));
 });
 
 server.post('/samples/add', async (req, res) => {
@@ -301,10 +301,10 @@ server.get('/internal/ac/list/:level', async (req, res) => {
         return http403(res);
     }
     const ipList = await Models.AccessControl.findAll({ attributes: ['ip'], where: { level: req.params.level } });
-    res.send(renderTemplate('internal-ac-list-ip-w-level'), {
+    res.send(renderTemplate('internal-ac-list-ip-w-level', {
         level: levels_ucd[req.params.level],
         ips: ipList.map(ip => {return { ip: ip.ip }}),
-    });
+    }));
 });
 
 server.get('/internal/ac/change/:ip', async (req, res) => {
