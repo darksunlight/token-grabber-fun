@@ -88,7 +88,7 @@ server.get('/samples/add', async (req, res) => {
     if (!(await isElevated(req))) {
         return http403(res);
     }
-    res.send(renderTemplate('add-sammple'), {
+    res.send(renderTemplate('add-sample'), {
         action: 'Add',
         action_lc: 'add',
         actionDesc: 'Use the following form to add a sample manually. Or alternatively, <a href="/samples/upload">upload a sample</a>.',
