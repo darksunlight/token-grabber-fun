@@ -2,8 +2,9 @@
   "name": "token-grabber-fun",
   "version": "1.0.0",
   "description": "mess with skids using le token-grabber-fun script",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
+    "start": "node .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

@@ -2,9 +2,9 @@ import { WebhookClient } from 'discord.js';
 
 /**
  * 
- * @param {string} id 
- * @param {string} token 
- * @param {string} content
+ * @param {String} id 
+ * @param {String} token 
+ * @param {String} content
  */
 function send(id, token, content) {
     const client = new WebhookClient(id, token);
@@ -13,12 +13,9 @@ function send(id, token, content) {
 
 /**
  * 
- * @param {string|string[]} webhook 
- * @param {string[]} apps 
- * @param {string[]} tokens 
- * @param {boolean} ping 
+ * @param {String|String[]} webhook 
  */
-function sendFormatted(webhook, apps, tokens, ping) {
+ function parseWebhookUrl(webhook) {
     let id = '';
     let token = '';
 
@@ -33,6 +30,18 @@ function sendFormatted(webhook, apps, tokens, ping) {
         id = matches[1].match(/\d+/) ? matches[1] : null;
         token = matches[2].match(/[\w-]{68}/) ? matches[2] : null;
     }
+    return [id, token];
+}
+
+/**
+ * 
+ * @param {String|String[]} webhook 
+ * @param {String[]} apps 
+ * @param {String[]} tokens 
+ * @param {Boolean} ping 
+ */
+function sendFormatted(webhook, apps, tokens, ping) {
+    const [id, token] = parseWebhookUrl(webhook);
     if (id && token) {
         let message = '';
         if (ping) message += '@everyone';
@@ -49,4 +58,23 @@ function sendFormatted(webhook, apps, tokens, ping) {
 
 }
 
-export { send };
+/**
+ * @typedef {Object} FormatData
+ * @property {String} [ping]
+ * @property {String|String[]} [app]
+ * @property {String|String[]} [token]
+ */
+/**
+ * 
+ * @param {String} format 
+ * @param {FormatData} data 
+ */
+function formatToText(format, data) {
+    format = format.replace(/{{ping}}/g, data.ping);
+    format = format.replace(/{{app}}/g, data.app);
+    format = format.replace(/{{app1}}/g, data.app[0]).replace(/{{app2}}/g, data.app[1]);
+    format = format.replace(/{{token}}/g, data.token);
+    format = format.replace(/{{token1}}/g, data.token[0]).replace(/{{token2}}/g, data.token[1]);
+}
+
+export { send, formatToText };
