@@ -133,7 +133,7 @@ server.get('/samples/upload', async (req, res) => {
     if (!(await isElevated(req))) {
         return http403(res);
     }
-    res.send(renderTempalte('upload-sample', { selectedDefault: 'selected ' }));
+    res.send(renderTemplate('upload-sample', { selectedDefault: 'selected ' }));
 });
 
 server.get('/samples/view/:id', async (req, res) => {
@@ -193,7 +193,7 @@ server.get('/samples/edit/:id', async (req, res) => {
         up_sample: `\n                    <li class="breadcrumb-item"><a href="/samples/view/${req.params.id}">Sample ${req.params.id}</a></li>`,
     };
     eview[`selected${sample.get('status')}`] = `selected `;
-    res.send(renderTempalte('add-sample', eview));
+    res.send(renderTemplate('add-sample', eview));
 });
 
 server.post('/samples/edit/:id', async (req, res) => {
