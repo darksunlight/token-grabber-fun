@@ -46,9 +46,6 @@ Webhook.init({
     id: {
         type: DataTypes.STRING,
         primaryKey: true,
-        validate: {
-            is: ['\d+'],
-        },
     },
     token: {
         type: DataTypes.TEXT,
@@ -80,6 +77,7 @@ SampleWebhooks.init({
 }, {
     sequelize,
     modelName: 'sampleWebhooks',
+    timestamps: false,
 });
 
 Sample.belongsToMany(Webhook, { through: SampleWebhooks });
@@ -90,9 +88,6 @@ Channel.init({
         type: DataTypes.STRING,
         primaryKey: true,
         unique: true,
-        validate: {
-            is: ['\d+'],
-        },
     },
 }, {
     sequelize,
@@ -110,9 +105,15 @@ Guild.init({
         type: DataTypes.STRING,
         primaryKey: true,
         unique: true,
-        validate: {
-            is: ['\d+'],
-        },
+    },
+    public: {
+        type: DataTypes.BOOLEAN,
+    },
+    name: {
+        type: DataTypes.TEXT,
+    },
+    description: {
+        type: DataTypes.TEXT,
     },
 }, {
     sequelize,
@@ -136,6 +137,9 @@ Format.init({
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
+    },
+    type: {
+        type: DataTypes.INTEGER, // 0 - plaintext / 1 - embed
     },
     value: {
         type: DataTypes.TEXT,
@@ -163,6 +167,7 @@ WebhookFormats.init({
 }, {
     sequelize,
     modelName: 'format',
+    timestamps: false,
 });
 
 Format.belongsToMany(Webhook, { through: WebhookFormats });

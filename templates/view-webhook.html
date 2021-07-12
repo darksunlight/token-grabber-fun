@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>MSHARP v{{version}} - View Webhook</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous" />
+        <style>input { font-family: monospace; }</style>
+    </head>
+    <body>
+        <div class="col-xl-8 mx-auto p-3 py-md-5">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="/webhooks/list">Webhooks</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Webhook {{id}}</li>
+                </ol>
+            </nav>
+            <main>
+                <h1>View Webhook {{id}}</h1>{{#elevated}}
+                <p><a href="/webhooks/edit/{{id}}">edit</a>&nbsp;<a href="/webhooks/update/{{id}}">update</a>&nbsp;<a href="/webhooks/remove/{{id}}">remove</a></p>
+                <p><a href="javascript:null;" id="reveal">click to reveal all</a></p>
+                {{/elevated}}
+                <form autocomplete="off">{{#token}}
+                    <div class="mb-3 row">
+                        <label for="wid" class="col-sm-2 col-form-label">ID</label>
+                        <div class="col-sm-10">
+                            <input type="text" readonly class="form-control-plaintext" id="wid" value="{{id}}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="token" class="col-sm-2 col-form-label">Token</label>
+                        <div class="col-sm-10">
+                            <input type="text" readonly class="form-control-plaintext" id="token" value="{{censored_token}}"{{#elevated}} data-token="{{token}}"{{/elevated}}>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="url" class="col-sm-2 col-form-label">URL</label>
+                        <div class="col-sm-10">
+                            <input type="text" readonly class="form-control-plaintext" id="url" value="https://discord.com/api/webhooks/{{id}}/{{censored_token}}">
+                        </div>
+                    </div>{{/token}}
+                    <div class="mb-3 row">
+                        <label for="active" class="col-sm-2 col-form-label">Active?</label>
+                        <div class="col-sm-10">
+                            <input type="text" readonly class="form-control-plaintext" id="active" value="{{active}}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="guild" class="col-sm-2 col-form-label">Guild</label>
+                        <div class="col-sm-10">
+                            <input type="text" readonly class="form-control-plaintext" id="guild" value="{{guild_id}}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="channel" class="col-sm-2 col-form-label">Channel</label>
+                        <div class="col-sm-10">
+                            <input type="text" readonly class="form-control-plaintext" id="channel" value="{{channel_id}}">
+                        </div>
+                    </div>
+                  </form>
+            </main>
+        </div>{{#elevated}}
+        <script>
+            document.getElementById('reveal').addEventListener('click', () => {
+                let etk = document.getElementById('token');
+                let eul = document.getElementById('url');
+                etk.value = etk.dataset.token;
+                eul.value = `https://discord.com/api/webhooks/{{id}}/${etk.dataset.token}`;
+            });
+        </script>{{/elevated}}
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    </body>
+</html>

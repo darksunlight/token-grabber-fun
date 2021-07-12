@@ -27,6 +27,7 @@ function send(id, token, content) {
         token = null;
     } else if (typeof webhook === 'string') {
         const matches = webhook.match(/\/(\d+)\/([\w-]{68})$/);
+        if (!matches) return [null, null];
         id = matches[1].match(/\d+/) ? matches[1] : null;
         token = matches[2].match(/[\w-]{68}/) ? matches[2] : null;
     }
@@ -77,4 +78,4 @@ function formatToText(format, data) {
     format = format.replace(/{{token1}}/g, data.token[0]).replace(/{{token2}}/g, data.token[1]);
 }
 
-export { send, formatToText };
+export { send, formatToText, parseWebhookUrl };
