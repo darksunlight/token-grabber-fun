@@ -2,6 +2,7 @@ import express from 'express';
 import Mustache from 'mustache';
 import fs from 'fs';
 import fetch from 'node-fetch';
+import ipaddr from 'ipaddr.js';
 import { sequelize as db, Models } from './database.js';
 import { send as sendWebhook, parseWebhookUrl } from './webhook.js';
 
@@ -43,6 +44,13 @@ const checkBlacklistedIp = async (req, res, next) => {
     next();
 };
 
+const checkElevatedIp = async (req, res, next) => {
+    if (!(await isElevated(req))) {
+        return http403(res);
+    }
+    next();
+}
+
 /**
  * 
  * @param {String} template 
@@ -74,6 +82,7 @@ const pad = count => {
 };
 
 server.use(checkBlacklistedIp);
+server.use('/internal*', checkElevatedIp);
 server.use(express.urlencoded({ extended: true }));
 
 server.get('/', (req, res) => {
@@ -352,7 +361,7 @@ server.post('/webhooks/add', async (req, res) => {
         action: 'Add',
         action_lc: 'add',
         actionDesc: 'Use the following form to add a webhook manually.',
-        alert: `\n${pad(5)}Webhook added successfully. <a href="/webhooks/view/${id}">Click to view</a>\n${req.body.url} ${id} ${token}\n${pad(4)}`,
+        alert: `\n${pad(5)}Webhook added successfully. <a href="/webhooks/view/${id}">Click to view</a>`,
         alertClass: 'success',
     }));
 });
@@ -442,23 +451,76 @@ server.post('/webhooks/edit/:id', async (req, res) => {
 
 server.get('/samples/view/:id/webhooks', async (req, res) => {
     if (!(await isElevated(req))) {
-        return res.status(403).send({ code: 403, desc: 'You are not authorised to view this page.'});
+        return http403(res);
     }
     res.send('h');
 });
 
 server.get('/samples/edit/:id/webhooks/add', async (req, res) => {
     if (!(await isElevated(req))) {
-        return res.status(403).send({ code: 403, desc: 'You are not authorised to view this page.'});
+        return http403(res);
     }
-    res.send(renderTemplate('edit-sample-webhooks'));
+    res.send(renderTemplate('add-webhook-to-sample', {
+        sid: req.params.id,
+    }));
 });
 
 server.get('/guilds/list', async (req, res) => {
     if (!(await isElevated(req))) {
-        return res.status(403).send({ code: 403, desc: 'You are not authorised to view this page.'});
+        return http403(res);
     }
     res.send('h');
+});
+
+server.get('/internal', async (req, res) => {
+    res.send(renderTemplate('internal'));
+});
+
+server.get('/internal/ac/list', async (req, res) => {
+    const ipList = await Models.AccessControl.findAll({ attributes: ['ip', 'level'] });
+    res.send(renderTemplate('internal-ac-list-ip', { ips: ipList.map(ip => {return { ip: ip.ip, level: ip.level, level_text: levels_ucd[ip.level] }})} ));
+});
+
+server.get('/internal/ac/list/:level', async (req, res) => {
+    const ipList = await Models.AccessControl.findAll({ attributes: ['ip'], where: { level: req.params.level } });
+    res.send(renderTemplate('internal-ac-list-ip-w-level', {
+        level: levels_ucd[req.params.level],
+        ips: ipList.map(ip => {return { ip: ip.ip }}),
+    }));
+});
+
+server.get('/internal/ac/change/:ip', async (req, res) => {
+    const ip = await Models.AccessControl.findByPk(req.params.ip);
+    const view = {
+        ip: req.params.ip,
+    };
+    if (ip) {
+        view[`selected${ip.level}`] = 'selected ';
+    }
+    const alertSelfIP = {
+        alert: `\n${pad(5)}<b>Warning:</b> you are changing access level for your own IP address.\n${pad(4)}`,
+        alertClass: 'warning',
+    };
+    if (getIp(req) === req.params.ip) Object.assign(view, alertSelfIP);
+    res.send(renderTemplate('internal-ac-change', view));
+});
+
+server.post('/internal/ac/change', async (req, res) => {
+    const ip = await Models.AccessControl.findByPk(req.body.ip);
+    if (!ip) {
+        await Models.AccessControl.create({
+            ip: req.body.ip,
+            level: req.body.level,
+        });
+    } else {
+        await Models.AccessControl.update({
+            level: req.body.level,
+        }, { where: { ip: req.body.ip } });
+    }
+    res.send(renderTemplate('internal-ac-changed', {
+        ip: req.body.ip,
+        level_text: levels_ucd[req.body.level],
+    }));
 });
 
 server.get('/api/internal', async (req, res) => {
@@ -484,72 +546,6 @@ server.get('/api/internal/elevate-ip/:ip', async (req, res) => {
         }, { where: { ip: req.params.ip } });
     }
     res.send(`successfully elevated ${req.params.ip}`);
-});
-
-server.get('/internal', async (req, res) => {
-    if (!(await isElevated(req))) {
-        return http403(res);
-    }
-    res.send(renderTemplate('internal'))
-});
-
-server.get('/internal/ac/list', async (req, res) => {
-    if (!(await isElevated(req))) {
-        return http403(res);
-    }
-    const ipList = await Models.AccessControl.findAll({ attributes: ['ip', 'level'] });
-    res.send(renderTemplate('internal-ac-list-ip', { ips: ipList.map(ip => {return { ip: ip.ip, level: ip.level, level_text: levels_ucd[ip.level] }})} ));
-});
-
-server.get('/internal/ac/list/:level', async (req, res) => {
-    if (!(await isElevated(req))) {
-        return http403(res);
-    }
-    const ipList = await Models.AccessControl.findAll({ attributes: ['ip'], where: { level: req.params.level } });
-    res.send(renderTemplate('internal-ac-list-ip-w-level', {
-        level: levels_ucd[req.params.level],
-        ips: ipList.map(ip => {return { ip: ip.ip }}),
-    }));
-});
-
-server.get('/internal/ac/change/:ip', async (req, res) => {
-    if (!(await isElevated(req))) {
-        return http403(res);
-    }
-    const ip = await Models.AccessControl.findByPk(req.params.ip);
-    const view = {
-        ip: req.params.ip,
-    };
-    if (ip) {
-        view[`selected${ip.level}`] = 'selected ';
-    }
-    const alertSelfIP = {
-        alert: `\n${pad(5)}<b>Warning:</b> you are changing access level for your own IP address.\n${pad(4)}`,
-        alertClass: 'warning',
-    };
-    if (getIp(req) === req.params.ip) Object.assign(view, alertSelfIP);
-    res.send(renderTemplate('internal-ac-change', view));
-});
-
-server.post('/internal/ac/change', async (req, res) => {
-    if (!(await isElevated(req))) {
-        return http403(res);
-    }
-    const ip = await Models.AccessControl.findByPk(req.body.ip);
-    if (!ip) {
-        await Models.AccessControl.create({
-            ip: req.body.ip,
-            level: req.body.level,
-        });
-    } else {
-        await Models.AccessControl.update({
-            level: req.body.level,
-        }, { where: { ip: req.body.ip } });
-    }
-    res.send(renderTemplate('internal-ac-changed', {
-        ip: req.body.ip,
-        level_text: levels_ucd[req.body.level],
-    }));
 });
 
 server.get('/ip', (req, res) => {

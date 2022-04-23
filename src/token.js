@@ -13,7 +13,8 @@ function genSnowflake() {
     parts[1] = parts[1].padStart(5, '0');
     parts[2] = parts[2].padStart(5, '0');
     parts[3] = parts[3].padStart(12, '0');
-    return [time, parseInt(parts.join(''), 2)];
+    const num = BigInt('0b' + parts.join(''));
+    return [time, num.toString()];
 }
 
 /**
@@ -22,12 +23,12 @@ function genSnowflake() {
  * @returns 
  */
 function genToken([minTime, snowflake]) {
-    const time = Math.round(getRandomInt(minTime + CONST.EPOCH, Date.now()) / 1000) - CONST.TOKEN_GEN_EPOCH;
+    const time = Math.round(getRandomInt(minTime + CONST.EPOCH, Date.now()) / 1000);
     const hmac = randomB64(32).substr(1, 27);
     const parts = [Buffer.from(snowflake.toString()).toString('base64'), ntob(time), hmac];
     if (!parts.join('.').match(CONST.REGEX)) parts[0] = parts[0].replace(/=/, 'xyzXYZ23'[Math.floor(Math.random()*8)]);
     if (0.45 < Math.random() < 0.55) parts[0] = parts[0].replace(/w$/, 'xyzXYZ23o'[Math.floor(Math.random()*9)]);
-    parts[1] = parts[1].replace(/^[CDE]/, 'XY'[Math.floor(Math.random()*2)]);
+    parts[1] = parts[1].replace('X', 'XY'[Math.floor(Math.random()*2)]);
     if (!parts.join('.').match(CONST.REGEX)) return null;
     return parts.join('.');
 }

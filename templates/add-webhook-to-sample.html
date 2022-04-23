@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>MSHARP v{{version}} - {{action}} Webhook</title>
+        <title>MSHARP v{{version}} - Add Webhook to Sample {{sid}}</title>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous" />
@@ -11,24 +11,19 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="/webhooks/list">Webhooks</a></li>{{&up_webhook}}
-                    <li class="breadcrumb-item active" aria-current="page">{{action}} Webhook{{id}}</li>
+                    <li class="breadcrumb-item"><a href="/samples/list">Samples</a></li>
+                    <li class="breadcrumb-item"><a href="/samples/view/{{sid}}">Sample {{sid}}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Add Webhook</li>
                 </ol>
             </nav>
             <main>{{#alert}}
                 <div class="alert alert-{{alertClass}}" role="alert">{{&alert}}</div>{{/alert}}
-                <h1>{{action}} Webhook{{id}}</h1>
-                <p>{{&actionDesc}}</p>
-                <form method="POST" action="/webhooks/{{&action_lc}}" autocomplete="off">
+                <h1>Add Webhook to Sample {{sid}}</h1>
+                <p>Use the form below to add a webhook to sample {{sid}}.</p>
+                <form method="POST" action="/samples/edit/{{sid}}/webhooks/add" autocomplete="off">
                     <div class="mb-3">
-                        <label for="url" class="form-label">Webhook URL</label>
-                        <input type="url" class="form-control" id="url" maxlength="255" readonly value="{{url}}">
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="active" name="active"{{&checked}}>
-                            <label class="form-check-label" for="active">Active?</label>
-                        </div>
+                        <label for="wid" class="form-label">Webhook ID</label>
+                        <input type="number" class="form-control" id="wid" min="1e+16" max="1e+19">
                     </div>
                     <button type="submit" class="btn btn-primary">Submit</button>
                   </form>

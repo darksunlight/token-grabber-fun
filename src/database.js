@@ -196,6 +196,13 @@ AccessControl.init({
         primaryKey: true,
         unique: true,
     },
+    range: {
+        type: DataTypes.SMALLINT,
+        validate: {
+            max: 128,
+            min: 0,
+        },
+    },
     level: {
         type: DataTypes.INTEGER, // 0 - default / 1 - blacklisted / 2 - whitelisted / 3 - elevated
         defaultValue: 0,

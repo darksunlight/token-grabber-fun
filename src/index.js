@@ -1,16 +1,11 @@
-// import { genMFAToken, genSnowflake, genToken } from './token.js';
 import { start as startServer } from './server.js';
+import { generate as generateTokens } from './generate.js';
 import { Models } from './database.js';
 
-/* let count = 0;
-while (count < 10) {
-    let token = '';
-    Math.random() < 0.025 ? token = genMFAToken() : token = genToken(genSnowflake());
-    if (token) {
-        console.log(token);
-        ++count;
-    }
-}*/
+if (process.argv[2] === 'generate' || process.argv[2] === 'retrieve') {
+    generateTokens(process.argv[3]);
+    process.exit(0);
+}
 for (const [k, v] of Object.entries(Models)) {
     console.log(`synchronising ${k}`);
     await v.sync();
